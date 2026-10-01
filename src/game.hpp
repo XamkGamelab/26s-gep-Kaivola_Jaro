@@ -3,6 +3,7 @@
 struct SDL_Window;
 struct SDL_Surface;
 
+
 namespace gep
 {
 	class [[nodiscard]] game
@@ -16,5 +17,6 @@ namespace gep
 	private:
 		SDL_Window* handle;
 		SDL_Surface* image;
+		//SDL_GLContext gl;
 	};
 }

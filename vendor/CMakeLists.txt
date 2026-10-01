@@ -38,3 +38,11 @@ set(SDLIMAGE_XPM OFF CACHE BOOL "Support loading XPM images" FORCE)
 set(SDLIMAGE_XV OFF CACHE BOOL "Support loading XV images" FORCE)
 
 FetchContent_MakeAvailable(SDL3 SDL_image)
+
+add_library(GLAD STATIC
+	glad/src/gl.c
+)
+
+target_include_directories(GLAD PUBLIC
+	glad/include
+)
