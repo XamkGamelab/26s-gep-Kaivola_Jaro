@@ -1,8 +1,9 @@
 #pragma once
 
+#include <SDL3/SDL.h>
+
 struct SDL_Window;
 struct SDL_Surface;
-
 
 namespace gep
 {
@@ -17,6 +18,6 @@ namespace gep
 	private:
 		SDL_Window* handle;
 		SDL_Surface* image;
-		//SDL_GLContext gl;
+		SDL_GLContext gl = nullptr;
 	};
 }

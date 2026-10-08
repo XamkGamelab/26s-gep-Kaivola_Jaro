@@ -18,11 +18,11 @@ namespace gep::time
 
 		Time(const Time&) = delete;
 		Time(Time&&) = delete;
-		Time operator=(const Time&) = delete;
-		Time operator=(Time&&) = delete;
+		Time& operator=(const Time&) = delete;
+		Time& operator=(Time&&) = delete;
 
-		void Tick();
-		float GetDeltaTime() const;
+		auto Tick() noexcept -> void;
+		auto GetDeltaTime() const noexcept -> float;
 
 	private:
 		Time() = default;
@@ -30,6 +30,6 @@ namespace gep::time
 
 		std::chrono::steady_clock::time_point previousTime{};
 		float deltaTime = 0.0f;
-
+		bool firstTick = true;
 	};
 }

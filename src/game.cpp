@@ -5,53 +5,84 @@
 #include <SDL3/SDL_events.h>
 #include <iostream>
 #include <SDL3/SDL_surface.h>
-#include "input/InputManager.h"
+#include "input/input_system.hpp"
 #include "SDL3_image/SDL_image.h"
 #include "time/TimeManager.h"
 #include <glad/gl.h>
-#include <SDL3/SDL_opengl.h>
 
-auto gep::game::init() noexcept -> bool 
-{ 
+
+auto gep::game::init() noexcept -> bool
+{
 	if (!SDL_Init(SDL_INIT_VIDEO))
-	{	
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError()); 
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init failed: %s", SDL_GetError());
 
-		return false; 
-	} 
-	
-	handle = SDL_CreateWindow("GEP", 1280, 720, SDL_WINDOW_RESIZABLE); 
-	
-	if (handle == nullptr) 
-	{	
-		SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "SDL_CreateWindow failed: %s", SDL_GetError()); 
+		return false;
+	}
 
-		return false; 
-	} 
-	
-	image = IMG_Load("assets/awesomeface.png"); 
-	
-	if (image == nullptr) 
-	{ 
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Load failed: %s", SDL_GetError()); 
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+	SDL_GL_SetAttribute(
+		SDL_GL_CONTEXT_PROFILE_MASK,
+		SDL_GL_CONTEXT_PROFILE_CORE
+	);
 
-		return false; 
-	} 
-	
+	handle = SDL_CreateWindow( "GEP", 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL );
+
+	if (handle == nullptr)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "SDL_CreateWindow failed: %s", SDL_GetError());
+
+		SDL_Quit();
+		return false;
+	}
+
+	gl = SDL_GL_CreateContext(handle);
+
+	if (gl == nullptr)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "SDL_GL_CreateContext failed: %s", SDL_GetError());
+
+		SDL_DestroyWindow(handle);
+		handle = nullptr;
+
+		return false;
+	}
+
+	if (!gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress))
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "Failed to initialize GLAD");
+
+		SDL_GL_DestroyContext(gl);
+		gl = nullptr;
+
+		SDL_DestroyWindow(handle);
+		handle = nullptr;
+
+		return false;
+	}
+
+	image = IMG_Load("assets/awesomeface.png");
+
+	if (image == nullptr)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "IMG_Load failed: %s", SDL_GetError());
+
+		return false;
+	}
+
 	return true;
 }
 
 auto gep::game::run() -> void
 {
-	auto& inputManager = InputManager::Instance();
-	//auto& input_system = input::input:system::instance();
+	auto& input_system = gep::input::input_system::instance();
 
 	bool is_running = true;
 
-	int image_x = 0;
-	int image_y = 0;
-	auto speed = 5;
-	const float SIZE = 128.0f;
+	float image_x = 0.0f;
+	float image_y = 0.0f;
+	auto speed = 500.0f;
 
 	SDL_Surface* window_surface = SDL_GetWindowSurface(handle);
 
@@ -66,8 +97,7 @@ auto gep::game::run() -> void
 		gep::time::Time::Instance().Tick();
 		float deltaTime = gep::time::Time::Instance().GetDeltaTime();
 
-		inputManager.Update();
-		//input_system.Update();
+		input_system.Update();
 
 		SDL_Event event;
 
@@ -84,8 +114,7 @@ auto gep::game::run() -> void
 				is_running = false;
 			}
 
-			inputManager.ProcessEvent(event);
-			//input_system.process_input(event);
+			input_system.process_input(event);
 		}
 
 		window_surface = SDL_GetWindowSurface(handle);
@@ -95,33 +124,33 @@ auto gep::game::run() -> void
 			continue;
 		}
 
-		if (inputManager.IsKeyPressed(SDLK_W))
+		if (input_system.IsKeyPressed(SDLK_W))
 		{
-			image_y -= speed;
+			image_y -= speed * deltaTime;
 
 			SDL_FillSurfaceRect(SDL_GetWindowSurface(handle), nullptr,
 				SDL_MapRGB(SDL_GetPixelFormatDetails(SDL_GetWindowSurface(handle)->format), nullptr, 215, 0, 64));
 		}
 
-		if (inputManager.IsKeyPressed(SDLK_A))
+		if (input_system.IsKeyPressed(SDLK_A))
 		{
-			image_x -= speed;
+			image_x -= speed * deltaTime;
 
 			SDL_FillSurfaceRect(SDL_GetWindowSurface(handle), nullptr,
 				SDL_MapRGB(SDL_GetPixelFormatDetails(SDL_GetWindowSurface(handle)->format), nullptr, 11, 218, 81));
 		}
 
-		if (inputManager.IsKeyPressed(SDLK_S))
+		if (input_system.IsKeyPressed(SDLK_S))
 		{
-			image_y += speed;
+			image_y += speed * deltaTime;
 
 			SDL_FillSurfaceRect(SDL_GetWindowSurface(handle), nullptr,
 				SDL_MapRGB(SDL_GetPixelFormatDetails(SDL_GetWindowSurface(handle)->format), nullptr, 4, 55, 242));
 		}
 
-		if (inputManager.IsKeyPressed(SDLK_D))
+		if (input_system.IsKeyPressed(SDLK_D))
 		{
-			image_x += speed;
+			image_x += speed * deltaTime;
 
 			SDL_FillSurfaceRect(SDL_GetWindowSurface(handle), nullptr,
 				SDL_MapRGB(SDL_GetPixelFormatDetails(SDL_GetWindowSurface(handle)->format), nullptr, 255, 215, 0));
@@ -167,12 +196,10 @@ auto gep::game::shutdown() noexcept -> void
 		SDL_DestroyWindow(handle);
 	}
 
-	/*
 	if (gl != nullptr)
 	{
 		SDL_GL_DestroyContext(gl);
 	}
-	*/
 
 	SDL_Quit();
 }

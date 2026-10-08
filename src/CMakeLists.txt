@@ -1,7 +1,7 @@
 add_executable(gep
 	main.cpp
 	game.cpp
-	input/InputManager.cpp
+	input/input_system.cpp
 	time/TimeManager.cpp
 )
 

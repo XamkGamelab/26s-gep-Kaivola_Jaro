@@ -18,20 +18,20 @@ namespace gep::input
 
 		input_system(const input_system&) = delete;
 		input_system(input_system&&) = delete;
-		input_system operator=(const input_system&) = delete;
-		input_system operator=(input_system&&) = delete;
+		input_system& operator=(const input_system&) = delete;
+		input_system& operator=(input_system&&) = delete;
 
 
 		auto Update() noexcept -> void;
 		auto process_input(const SDL_Event&) -> void;
 
-		auto IsKeyDown(uint32_t) const noexcept -> bool;
-		auto IsKeyUp(uint32_t) const noexcept -> bool;
-		auto IsKeyPressed(uint32_t) const noexcept -> bool;
+		auto IsKeyDown(SDL_Keycode key) const noexcept -> bool;
+		auto IsKeyUp(SDL_Keycode key) const noexcept -> bool;
+		auto IsKeyPressed(SDL_Keycode key) const noexcept -> bool;
 
-		auto IsMouseDown(uint32_t) const noexcept -> bool;
-		auto IsMouseUp(uint32_t) const noexcept -> bool;
-		auto IsMousePressed(uint32_t) const noexcept -> bool;
+		auto IsMouseDown(uint32_t button) const noexcept -> bool;
+		auto IsMouseUp(uint32_t button) const noexcept -> bool;
+		auto IsMousePressed(uint32_t button) const noexcept -> bool;
 
 	private:
 		input_system() = default;
