@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include "renderer/Renderer2D.hpp"
 
 struct SDL_Window;
 struct SDL_Surface;
@@ -18,6 +19,8 @@ namespace gep
 	private:
 		SDL_Window* handle;
 		SDL_Surface* image;
-		SDL_GLContext gl = nullptr;
+		SDL_GLContextState* gl_context = nullptr;
+
+		Renderer2D renderer;
 	};
 }

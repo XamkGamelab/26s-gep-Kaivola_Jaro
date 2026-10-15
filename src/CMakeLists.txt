@@ -3,6 +3,9 @@ add_executable(gep
 	game.cpp
 	input/input_system.cpp
 	time/TimeManager.cpp
+	file_loader.cpp
+    renderer/Shader.cpp
+    renderer/Renderer2D.cpp
 )
 
 target_compile_features(gep PRIVATE cxx_std_23)
