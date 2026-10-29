@@ -1,13 +1,12 @@
 #pragma once
 #include <unordered_set>
-#include <SDL3/SDL.h>
+#include <cstdint>
 
 union SDL_Event;
 
 namespace gep::input
 {
-
-	class [[nodiscord]] input_system
+	class [[nodiscard]] input_system
 	{
 	public:
 		static auto instance() -> input_system&
@@ -18,32 +17,28 @@ namespace gep::input
 
 		input_system(const input_system&) = delete;
 		input_system(input_system&&) = delete;
-		input_system& operator=(const input_system&) = delete;
-		input_system& operator=(input_system&&) = delete;
+		input_system operator=(const input_system&) = delete;
+		input_system operator=(input_system&&) = delete;
 
+		auto update() noexcept -> void;
+		auto process_input(const SDL_Event&) noexcept -> void;
 
-		auto Update() noexcept -> void;
-		auto process_input(const SDL_Event&) -> void;
-
-		auto IsKeyDown(SDL_Keycode key) const noexcept -> bool;
-		auto IsKeyUp(SDL_Keycode key) const noexcept -> bool;
-		auto IsKeyPressed(SDL_Keycode key) const noexcept -> bool;
-
-		auto IsMouseDown(uint32_t button) const noexcept -> bool;
-		auto IsMouseUp(uint32_t button) const noexcept -> bool;
-		auto IsMousePressed(uint32_t button) const noexcept -> bool;
+		auto is_key_down(uint32_t) const noexcept -> bool;
+		auto is_key_pressed(uint32_t) const noexcept -> bool;
+		auto is_key_up(uint32_t) const noexcept -> bool;
+		auto is_mouse_down(uint8_t) const noexcept -> bool;
+		auto is_mouse_pressed(uint8_t) const noexcept -> bool;
+		auto is_mouse_up(uint8_t) const noexcept -> bool;
 
 	private:
 		input_system() = default;
 		~input_system() = default;
 
-		std::unordered_set<SDL_Keycode> keyDown;
-		std::unordered_set<SDL_Keycode> keyUp;
-		std::unordered_set<SDL_Keycode> keyPressed;
-
-		std::unordered_set<unsigned int> mouseDown;
-		std::unordered_set<unsigned int> mouseUp;
-		std::unordered_set<unsigned int> mousePressed;
-
+		std::unordered_set<uint32_t> keysDown{};
+		std::unordered_set<uint32_t> keysPressed{};
+		std::unordered_set<uint32_t> keysUp{};
+		std::unordered_set<uint8_t> mouseDown{};
+		std::unordered_set<uint8_t> mousePressed{};
+		std::unordered_set<uint8_t> mouseUp{};
 	};
 }

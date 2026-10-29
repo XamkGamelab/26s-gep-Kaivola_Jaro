@@ -1,6 +1,7 @@
+# vendor/CMakeLists.txt
 include(FetchContent)
 
-set(FETCHCONTENT_QUIET OFF CACHE BOOL "Enable Fetch")
+set(FETCHCONTENT_QUIET OFF CACHE BOOL "Enable FetchContent logging")
 
 FetchContent_Declare(
 	SDL3
@@ -39,10 +40,5 @@ set(SDLIMAGE_XV OFF CACHE BOOL "Support loading XV images" FORCE)
 
 FetchContent_MakeAvailable(SDL3 SDL_image)
 
-add_library(GLAD STATIC
-	glad/src/gl.c
-)
-
-target_include_directories(GLAD PUBLIC
-	glad/include
-)
+add_library(GLAD STATIC "glad/src/gl.c")
+target_include_directories(GLAD PUBLIC "glad/include")

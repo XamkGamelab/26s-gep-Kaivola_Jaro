@@ -1,92 +1,83 @@
-#include "Renderer2D.hpp"
-#include <SDL3/SDL_log.h>
+#include "renderer2D.hpp"
+#include <glad/gl.h>
+#include <SDL3_image/SDL_image.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_pixels.h>
 
-auto gep::Renderer2D::init() -> bool
+namespace gep::renderer
 {
-    if (!shader.init(
-        "assets/shaders/vert.glsl",
-        "assets/shaders/frag.glsl"))
-    {
-        return false;
-    }
+	renderer_2d::renderer_2d()
+	{
+		shader_program = shader{ "assets/shaders/vert.glsl", "assets/shaders/frag.glsl" };
+		init_quad();
 
-    const float vertices[] = {
-        -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f,  0.5f,
-        -0.5f,  0.5f
-    };
+		shader_program.set_integer("texture_0", 0);
+		shader_program.set_matrix("transform", 0);
 
-    const unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
+	}
 
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glGenBuffers(1, &ebo);
+	renderer_2d::~renderer_2d()
+	{
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
+		shader_program.clear();
+	}
 
-    glBindVertexArray(vao);
+	auto renderer_2d::clear() const noexcept -> void
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        sizeof(vertices),
-        vertices,
-        GL_STATIC_DRAW
-    );
+	auto renderer_2d::draw_quad() const -> void
+	{
+		shader_program.bind();
+		glBindVertexArray(vao);
+		glActiveTexture(GL_TEXTURE0);
+		texture.bind();
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER,
-        sizeof(indices),
-        indices,
-        GL_STATIC_DRAW
-    );
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	}
 
-    glVertexAttribPointer(
-        0, 2, GL_FLOAT, GL_FALSE,
-        2 * sizeof(float), nullptr
-    );
-    glEnableVertexAttribArray(0);
+	auto renderer_2d::init_quad() -> void
+	{
+		
+		texture = Texture{ "assets/awesomeface.png" };
 
-    glBindVertexArray(0);
+		float vertices[] = {
+			// X     Y     U     V
+			 0.5f,  0.5f, 1.0f, 1.0f, // top right
+			 0.5f, -0.5f, 1.0f, 0.0f,// bottom right
+			-0.5f, -0.5f, 0.0f, 0.0f, // bottom left
+			-0.5f,  0.5f, 0.0f, 1.0f // top left 
+		};
 
-    return true;
-}
+		uint32_t indices[] = {  // note that we start from 0!
+			0, 1, 3,   // first triangle
+			1, 2, 3    // second triangle
+		};
 
-auto gep::Renderer2D::draw() -> void
-{
-    shader.use();
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-}
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &ebo);
 
-auto gep::Renderer2D::shutdown() -> void
-{
-    if (ebo != 0)
-    {
-        glDeleteBuffers(1, &ebo);
-        ebo = 0;
-    }
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    if (vbo != 0)
-    {
-        glDeleteBuffers(1, &vbo);
-        vbo = 0;
-    }
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    if (vao != 0)
-    {
-        glDeleteVertexArrays(1, &vao);
-        vao = 0;
-    }
+		uint32_t element_component_count = 2; // Vertex --> from 2 components
+		uint32_t element_size = 4 * sizeof(float);
+		uint32_t vertex_count = sizeof(vertices) / element_size;
+		glVertexAttribPointer(0,
+			element_component_count, GL_FLOAT, GL_FALSE, element_size, (void*)0);
+		glEnableVertexAttribArray(0);
 
-    shader.shutdown();
-}
+		glVertexAttribPointer(1,
+			element_component_count, GL_FLOAT, GL_FALSE, element_size, (void*)(2 * sizeof(float)));
+		glEnableVertexAttribArray(1);
 
-gep::Renderer2D::~Renderer2D()
-{
-    shutdown();
+	}
 }

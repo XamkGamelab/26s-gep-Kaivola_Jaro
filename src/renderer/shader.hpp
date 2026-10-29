@@ -1,28 +1,33 @@
 #pragma once
+#include <string_view>
+#include <cstdint>
 
-#include <glad/gl.h>
-#include <string>
-
-namespace gep
+namespace gep::renderer
 {
-    class Shader
-    {
-    public:
-        auto init(
-            const std::string& vertexPath,
-            const std::string& fragmentPath
-        ) -> bool;
+	class [[nodiscard]] shader
+	{
+	public:
+		shader() = default;
+		~shader();
+		shader(std::string_view v_path, std::string_view f_path);
 
-        auto use() const -> void;
-        auto shutdown() -> void;
+		auto get_id() const noexcept -> uint32_t { return id; }
+		auto bind() const noexcept -> void;
+		auto clear() -> void;
 
-        ~Shader();
+		auto set_integer(std::string_view name, int value) const -> void;
+		auto set_matrix(std::string_view name, const float* matrix) const -> void;
 
-        Shader() = default;
-        Shader(const Shader&) = delete;
-        Shader& operator=(const Shader&) = delete;
 
-    private:
-        unsigned int shaderProgram = 0;
-    };
+		shader(const shader&) = delete;
+		shader& operator=(const shader&) = delete;
+
+		shader(shader&& rhs) noexcept;
+		shader& operator=(shader&& rhs) noexcept;
+
+	private:
+		uint32_t id{ 0 };
+
+		auto compile_shader(uint32_t shader, const char* source) const -> bool;
+	};
 }

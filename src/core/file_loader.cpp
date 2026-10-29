@@ -1,3 +1,4 @@
+/*
 #include "file_loader.hpp"
 #include <fstream>
 #include <sstream>
@@ -16,3 +17,4 @@ auto gep::file_loader::load(const std::string& path) -> std::string
 
     return buffer.str();
 }
+*/

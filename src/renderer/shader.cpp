@@ -1,113 +1,126 @@
-#include "Shader.hpp"
-#include "../file_loader.hpp"
+#include "shader.hpp"
+#include "..\core\file_loader.hpp"
+#include <glad/gl.h>
+#include <optional>
+#include <utility>
 
-#include <SDL3/SDL_log.h>
-#include <string>
-#include <exception>
-
-auto gep::Shader::init(const std::string& vertexPath, const std::string& fragmentPath) -> bool
+namespace gep::renderer
 {
-    std::string vertexSource;
-    std::string fragmentSource;
+	shader::shader(std::string_view v_path, std::string_view f_path)
+	{
+		uint32_t vertexShader, fragmentShader;
+		vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
-    try
-    {
-        vertexSource = file_loader::load(vertexPath);
-        fragmentSource = file_loader::load(fragmentPath);
-    }
-    catch (const std::exception& e)
-    {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", e.what());
-        return false;
-    }
+		auto vertex_source = core::load_text_file(v_path);
+		if (!vertex_source.has_value())
+		{
+			return;
+		}
 
-    auto compileShader = [](GLenum type, const std::string& source) -> unsigned int
-        {
-            unsigned int shader = glCreateShader(type);
-            const char* code = source.c_str();
+		auto success = compile_shader(vertexShader, vertex_source.value().c_str());
 
-            glShaderSource(shader, 1, &code, nullptr);
-            glCompileShader(shader);
+		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+		auto frag_source = core::load_text_file(f_path);
+		if (!frag_source.has_value())
+		{
+			return;
+		}
 
-            int success = GL_FALSE;
-            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+		success = compile_shader(fragmentShader, frag_source.value().c_str());
 
-            if (!success)
-            {
-                int length = 0;
-                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+		// Shader program creation ---> OpenGL object
+		id = glCreateProgram(); // Allocation
+		// Attach shaders to the shader program
+		glAttachShader(id, vertexShader);
+		glAttachShader(id, fragmentShader);
+		// Link shader program
+		glLinkProgram(id);
+		int32_t status = 0;
+		glGetProgramiv(id, GL_LINK_STATUS, &status);
+		if (status == 0)
+		{
+			int32_t log_length;
+			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &log_length);
+			std::string log = std::string((std::size_t)log_length, ' ');
+			glGetProgramInfoLog(id, log_length, nullptr, &log[0]);
+			SDL_LogError(SDL_LOG_CATEGORY_GPU,
+				"Shader program linking failed: %s", log.c_str());
+		}
 
-                std::string log(static_cast<std::size_t>(length), '\0');
-                glGetShaderInfoLog(shader, length, nullptr, log.data());
+		glDeleteShader(vertexShader);
+		glDeleteShader(fragmentShader);
+	}
 
-                SDL_LogError(
-                    SDL_LOG_CATEGORY_APPLICATION,
-                    "Shader compilation failed: %s",
-                    log.c_str()
-                );
+	shader::~shader()
+	{
+		clear();
+	}
 
-                glDeleteShader(shader);
-                return 0;
-            }
+	auto shader::bind() const noexcept -> void
+	{
+		glUseProgram(id);
+	}
 
-            return shader;
-        };
+	auto shader::clear() -> void
+	{
+		if (id != 0)
+		{
+			glDeleteProgram(id);
+			id = 0;
+		}
+	}
 
-    unsigned int vertex = compileShader(GL_VERTEX_SHADER, vertexSource);
-    if (vertex == 0)
-        return false;
+	shader::shader(shader&& rhs) noexcept
+		: id(std::exchange(rhs.id, 0))
+	{}
 
-    unsigned int fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
-    if (fragment == 0)
-    {
-        glDeleteShader(vertex);
-        return false;
-    }
+	shader& shader::operator=(shader&& rhs) noexcept
+	{
+		if (this == &rhs)
+		{
+			return *this;
+		}
 
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertex);
-    glAttachShader(shaderProgram, fragment);
-    glLinkProgram(shaderProgram);
+		clear();
 
-    int success = GL_FALSE;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+		id = std::exchange(rhs.id, 0);
+	}
 
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
+	auto shader::set_integer(std::string_view name, int value) const -> void
+	{
+		bind();
+		const std::string uniform(name);
+		const GLint location = glGetUniformLocation(id, uniform.c_str());
+		if (location != -1) glUniform1i(location, value);
+	}
 
-    if (!success)
-    {
-        int length = 0;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &length);
+	auto shader::set_matrix(std::string_view name, const float* matrix) const -> void
+	{
+		bind();
+		const std::string uniform(name);
+		const GLint location = glGetUniformLocation(id, uniform.c_str());
+		if (location != -1) glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
+	}
 
-        std::string log(static_cast<std::size_t>(length), '\0');
-        glGetProgramInfoLog(shaderProgram, length, nullptr, log.data());
+	auto shader::compile_shader(uint32_t shader, const char* source) const -> bool
+	{
+		glShaderSource(shader, 1, &source, nullptr);
+		glCompileShader(shader);
 
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Shader linking failed: %s", log.c_str());
+		int32_t status = 0;
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+		if (status != 0)
+		{
+			return true;
+		}
 
-        glDeleteProgram(shaderProgram);
-        shaderProgram = 0;
-        return false;
-    }
+		int32_t log_length;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
+		std::string log = std::string((std::size_t)log_length, ' ');
+		glGetShaderInfoLog(shader, log_length, nullptr, &log[0]);
+		SDL_LogError(SDL_LOG_CATEGORY_GPU,
+			"Frag shader compile failed: %s", log.c_str());
 
-    return true;
-}
-
-auto gep::Shader::use() const -> void
-{
-    glUseProgram(shaderProgram);
-}
-
-auto gep::Shader::shutdown() -> void
-{
-    if (shaderProgram != 0)
-    {
-        glDeleteProgram(shaderProgram);
-        shaderProgram = 0;
-    }
-}
-
-gep::Shader::~Shader()
-{
-    shutdown();
+		return false;
+	}
 }

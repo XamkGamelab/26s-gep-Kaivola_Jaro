@@ -1,26 +1,28 @@
 #pragma once
+#include "shader.hpp"
+#include "texture.hpp"
 
-#include "Shader.hpp"
-
-namespace gep
+namespace gep::renderer
 {
-    class Renderer2D
-    {
-    public:
-        auto init() -> bool;
-        auto draw() -> void;
-        auto shutdown() -> void;
+	class [[nodiscard]] renderer_2d
+	{
+	public:
+		renderer_2d();
+		~renderer_2d();
 
-        ~Renderer2D();
+		auto clear() const noexcept -> void;
+		auto draw_quad() const -> void;
 
-        Renderer2D() = default;
-        Renderer2D(const Renderer2D&) = delete;
-        Renderer2D& operator=(const Renderer2D&) = delete;
+		renderer_2d(const renderer_2d&) = delete;
+		renderer_2d(renderer_2d&&) = delete;
+		renderer_2d operator=(const renderer_2d&) = delete;
+		renderer_2d operator=(renderer_2d&&) = delete;
 
-    private:
-        Shader shader;
-        unsigned int vao = 0;
-        unsigned int vbo = 0;
-        unsigned int ebo = 0;
-    };
+	private:
+		uint32_t vao{ 0 }, vbo{ 0 }, ebo{ 0 };
+		shader shader_program;
+		Texture texture;
+
+		auto init_quad() -> void;
+	};
 }
