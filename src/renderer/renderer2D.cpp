@@ -1,4 +1,7 @@
 #include "renderer2D.hpp"
+#include "texture.hpp"
+#include "camera.hpp"
+#include "../core/transform.hpp"
 #include <glad/gl.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL_surface.h>
@@ -10,10 +13,6 @@ namespace gep::renderer
 	{
 		shader_program = shader{ "assets/shaders/vert.glsl", "assets/shaders/frag.glsl" };
 		init_quad();
-
-		shader_program.set_integer("texture_0", 0);
-		shader_program.set_matrix("transform", 0);
-
 	}
 
 	renderer_2d::~renderer_2d()
@@ -29,21 +28,26 @@ namespace gep::renderer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
-	auto renderer_2d::draw_quad() const -> void
+	auto renderer_2d::draw_quad(const core::transform& transform, const texture& tex, const camera& camera) const -> void
 	{
 		shader_program.bind();
+		tex.bind(0);
+
+		shader_program.set_int("texture_0", 0);
+
+		shader_program.set_mat4x4("u_projection", camera.get_projection_matrix());
+		shader_program.set_mat4x4("u_view", camera.get_view_matrix());
+		shader_program.set_mat4x4("u_model", transform.get_model_matrix());
+
 		glBindVertexArray(vao);
-		glActiveTexture(GL_TEXTURE0);
-		texture.bind();
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 	}
+
 
 	auto renderer_2d::init_quad() -> void
 	{
-		
-		texture = Texture{ "assets/awesomeface.png" };
-
 		float vertices[] = {
 			// X     Y     U     V
 			 0.5f,  0.5f, 1.0f, 1.0f, // top right

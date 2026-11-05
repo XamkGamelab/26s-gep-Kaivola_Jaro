@@ -9,7 +9,6 @@ namespace gep::core
 {
 	auto load_text_file(std::filesystem::path filepath) -> std::optional<std::string>
 	{
-
 		if (!std::filesystem::exists(filepath))
 		{
 			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,

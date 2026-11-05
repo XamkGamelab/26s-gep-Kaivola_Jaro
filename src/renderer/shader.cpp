@@ -1,6 +1,7 @@
 #include "shader.hpp"
 #include "..\core\file_loader.hpp"
 #include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <optional>
 #include <utility>
 
@@ -70,6 +71,28 @@ namespace gep::renderer
 		}
 	}
 
+	auto shader::set_int(const char* name, int32_t value) const noexcept -> void
+	{
+		int32_t location = -1;
+		if (!try_get_uniform_location(name, location))
+		{
+			return;
+		}
+
+		glUniform1i(location, value);
+	}
+
+	auto shader::set_mat4x4(const char* name, const glm::mat4x4& value) const noexcept -> void
+	{
+		int32_t location = -1;
+		if (!try_get_uniform_location(name, location))
+		{
+			return;
+		}
+
+		glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+	}
+
 	shader::shader(shader&& rhs) noexcept
 		: id(std::exchange(rhs.id, 0))
 	{}
@@ -84,22 +107,6 @@ namespace gep::renderer
 		clear();
 
 		id = std::exchange(rhs.id, 0);
-	}
-
-	auto shader::set_integer(std::string_view name, int value) const -> void
-	{
-		bind();
-		const std::string uniform(name);
-		const GLint location = glGetUniformLocation(id, uniform.c_str());
-		if (location != -1) glUniform1i(location, value);
-	}
-
-	auto shader::set_matrix(std::string_view name, const float* matrix) const -> void
-	{
-		bind();
-		const std::string uniform(name);
-		const GLint location = glGetUniformLocation(id, uniform.c_str());
-		if (location != -1) glUniformMatrix4fv(location, 1, GL_FALSE, matrix);
 	}
 
 	auto shader::compile_shader(uint32_t shader, const char* source) const -> bool
@@ -122,5 +129,18 @@ namespace gep::renderer
 			"Frag shader compile failed: %s", log.c_str());
 
 		return false;
+	}
+
+	auto shader::try_get_uniform_location(const char* name, int32_t& location) const noexcept -> bool
+	{
+		location = glGetUniformLocation(id, name);
+		if (location < 0)
+		{
+			SDL_LogError(SDL_LOG_CATEGORY_GPU,
+				"Shader %i could not find uniform ""%s""", id, name);
+			return false;
+		}
+
+		return true;
 	}
 }

@@ -4,24 +4,26 @@
 
 namespace gep::renderer
 {
-	class [[nodiscard]] Texture
+	class [[nodiscard]] texture
 	{
 	public:
-		Texture() = default;
-		Texture(std::string_view path);
-		~Texture();
+		texture() = default;
+		texture(std::string_view texture_path);
+		~texture();
 
-		Texture(const Texture&) = delete;
-		Texture& operator=(const Texture&) = delete;
-		Texture(Texture&& other) noexcept;
-		Texture& operator=(Texture&& other) noexcept;
+		auto get_id() const noexcept -> uint32_t { return id; }
+		auto bind(uint16_t texture_slot_unit) const noexcept -> void;
 
-		auto bind() const noexcept -> void;
-		auto width() const noexcept -> int { return w; }
-		auto height() const noexcept -> int { return h; }
+		texture(const texture&) = delete;
+		texture& operator=(const texture&) = delete;
+
+		texture(texture&& rhs) noexcept;
+		texture& operator=(texture&& rhs) noexcept;
 
 	private:
 		uint32_t id{ 0 };
-		int w{ 0 }, h{ 0 };
+		uint32_t width{ 0 }, height{ 0 };
+
+		auto clear() noexcept -> void;
 	};
 }

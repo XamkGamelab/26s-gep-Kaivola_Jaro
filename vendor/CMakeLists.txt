@@ -38,7 +38,17 @@ set(SDLIMAGE_XCF OFF CACHE BOOL "Support loading XCF images" FORCE)
 set(SDLIMAGE_XPM OFF CACHE BOOL "Support loading XPM images" FORCE)
 set(SDLIMAGE_XV OFF CACHE BOOL "Support loading XV images" FORCE)
 
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY https://github.com/g-truc/glm.git
+	#GIT_TAG release-1.0.3 # 6f14f4792a0cde5d0cf2c910506724d61cb95834
+	GIT_SHALLOW ON
+	GIT_PROGRESS ON
+)
+
 FetchContent_MakeAvailable(SDL3 SDL_image)
+
+FetchContent_MakeAvailable(glm)
 
 add_library(GLAD STATIC "glad/src/gl.c")
 target_include_directories(GLAD PUBLIC "glad/include")

@@ -15,6 +15,7 @@ target_link_libraries(gep PRIVATE
 	SDL3::SDL3
 	SDL3_image::SDL3_image
 	GLAD
+	glm::glm-header-only
 )
 
 set(ASSETS_INPUT_DIRECTORY 

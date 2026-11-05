@@ -1,6 +1,7 @@
 #pragma once
 #include <string_view>
 #include <cstdint>
+#include <glm/fwd.hpp>
 
 namespace gep::renderer
 {
@@ -15,9 +16,8 @@ namespace gep::renderer
 		auto bind() const noexcept -> void;
 		auto clear() -> void;
 
-		auto set_integer(std::string_view name, int value) const -> void;
-		auto set_matrix(std::string_view name, const float* matrix) const -> void;
-
+		auto set_int(const char* name, int32_t value) const noexcept -> void;
+		auto set_mat4x4(const char* name, const glm::mat4x4& value) const noexcept -> void;
 
 		shader(const shader&) = delete;
 		shader& operator=(const shader&) = delete;
@@ -29,5 +29,6 @@ namespace gep::renderer
 		uint32_t id{ 0 };
 
 		auto compile_shader(uint32_t shader, const char* source) const -> bool;
+		auto try_get_uniform_location(const char* name, int32_t& location) const noexcept -> bool;
 	};
 }
